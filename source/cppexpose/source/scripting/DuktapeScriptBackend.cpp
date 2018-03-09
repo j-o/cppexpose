@@ -17,11 +17,11 @@ namespace cppexpose
 {
 
 
-const char * s_duktapeScriptBackendKey   = "duktapeScriptBackend";
-const char * s_duktapeNextStashIndexKey  = "duktapeNextStashFunctionIndex";
-const char * s_duktapeFunctionPointerKey = "duktapeFunctionPointer";
-const char * s_duktapeObjectPointerKey   = "duktapeObjectPointer";
-const char * s_duktapePropertyNameKey    = "duktapePropertyName";
+const char * s_duktapeScriptBackendKey   = "_duktapeScriptBackend";
+const char * s_duktapeNextStashIndexKey  = "_duktapeNextStashFunctionIndex";
+const char * s_duktapeFunctionPointerKey = "_duktapeFunctionPointer";
+const char * s_duktapeObjectPointerKey   = "_duktapeObjectPointer";
+const char * s_duktapePropertyNameKey    = "_duktapePropertyName";
 
 
 DuktapeScriptBackend::DuktapeScriptBackend()
@@ -29,6 +29,7 @@ DuktapeScriptBackend::DuktapeScriptBackend()
 {
     // Create duktape script context
     m_context = duk_create_heap_default();
+    setPrint();
 }
 
 DuktapeScriptBackend::~DuktapeScriptBackend()
@@ -134,11 +135,11 @@ Variant DuktapeScriptBackend::fromDukStack(duk_idx_t index)
     {
         // Get pointer to wrapped function
         duk_get_prop_string(m_context, index, s_duktapeFunctionPointerKey);
-        Function * func = reinterpret_cast<Function *>( duk_get_pointer(m_context, -1) );
+        Function * func = reinterpret_cast<Function *>(duk_get_pointer(m_context, -1));
         duk_pop(m_context);
 
         // Return wrapped function
-        return Variant::fromValue<Function>(*func);
+        return func != nullptr ? Variant::fromValue<Function>(*func) : Variant();
     }
 
     // Javascript function - will be stored in global stash for access from C++ later
@@ -365,6 +366,142 @@ int DuktapeScriptBackend::getNextStashIndex()
 
     // Return index
     return index;
+}
+
+
+void DuktapeScriptBackend::setPrint()
+{
+    duk_push_global_object(m_context);
+    duk_push_c_function(m_context, &DuktapeScriptBackend::printHelper, DUK_VARARGS);
+    duk_put_prop_string(m_context, -2, "print");
+    duk_pop(m_context);
+}
+
+
+duk_ret_t DuktapeScriptBackend::printHelper(duk_context * context)
+{
+    // Set up result
+    auto text = std::ostringstream{};
+
+    // Recursive lambda do to the actual formatting
+    const std::function<void(duk_idx_t, bool)> appendFromStack = [&](duk_idx_t index, bool topLevel)
+    {
+        switch (duk_get_type(context, index))
+        {
+            case DUK_TYPE_NULL:
+                text << "null";
+                break;
+            case DUK_TYPE_UNDEFINED:
+                text << "undefined";
+                break;
+            case DUK_TYPE_NUMBER:
+                text << duk_get_number(context, index);
+                break;
+            case DUK_TYPE_BOOLEAN:
+                text << duk_get_boolean(context, index);
+                break;
+            case DUK_TYPE_POINTER:
+                text << duk_get_pointer(context, index);
+                break;
+            case DUK_TYPE_STRING:
+                if (topLevel)
+                {
+                    text << duk_get_string(context, index);
+                }
+                else // If printing an object member, add quotes to clarify type
+                {
+                    text << "\"" << duk_get_string(context, index) << "\"";
+                }
+                break;
+            case DUK_TYPE_OBJECT: // Can be object, array, or function
+                if (duk_is_c_function(context, index) || duk_is_ecmascript_function(context, index))
+                {
+                    text << "function(...){...}";
+                }
+                else if (duk_is_array(context, index))
+                {
+                    if (topLevel)
+                    {
+                        auto firstItem = true;
+
+                        text << "[";
+                        for (unsigned int j = 0; j < duk_get_length(context, index); ++j)
+                        {
+                            if (!firstItem)
+                            {
+                                text << ",";
+                            }
+                            firstItem = false;
+
+                            duk_get_prop_index(context, index, j);
+                            appendFromStack(-1, false);
+                            duk_pop(context);
+                        }
+                        text << "]";
+                    }
+                    else
+                    {
+                        text << "[...]";
+                    }
+                }
+                else if (duk_is_object(context, index))
+                {
+                    if (topLevel)
+                    {
+                        auto firstItem = true;
+
+                        text << "{";
+
+                        // Push enumerator
+                        duk_enum(context, index, 0);
+                        while (duk_next(context, -1, 1)) // Push next key (-2) & value (-1)
+                        {
+                            const auto name = duk_require_string(context, -2);
+                            if (name[0] != '_')
+                            {
+                                if (!firstItem)
+                                {
+                                    text << ",";
+                                }
+                                firstItem = false;
+
+                                text << name << ":";
+                                appendFromStack(-1, false);
+                            }
+
+                            // Pop key & value
+                            duk_pop_2(context);
+                        }
+
+                        // Pop enumerator
+                        duk_pop(context);
+
+                        text << "}";
+                    }
+                    else
+                    {
+                        text << "{...}";
+                    }
+                }
+                break; // case DUK_TYPE_OBJECT
+
+            default:
+                error() << "Unknown/missing type";
+                break;
+        }
+    };
+
+    const auto numArguments = duk_get_top(context);
+    for (auto i = 0; i < numArguments; ++i)
+    {
+        appendFromStack(i, true);
+
+        text << " ";
+    }
+
+    getScriptBackend(context)->scriptContext()->scriptOutput(text.str());
+
+    return 0;
 }
 
 

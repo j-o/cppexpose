@@ -30,6 +30,12 @@ public:
     */
     Signal<const std::string &> scriptException;
 
+    /**
+    *  @brief
+    *    Called when a script outputs to the console (e.g., via print())
+    */
+    Signal<const std::string &> scriptOutput;
+
 
 public:
     /**

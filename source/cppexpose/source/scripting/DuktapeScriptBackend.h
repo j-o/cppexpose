@@ -137,6 +137,10 @@ protected:
     int getNextStashIndex();
 
 
+    void setPrint();
+    static duk_ret_t printHelper(duk_context * context);
+
+
 protected:
     duk_context                                                                    * m_context;        ///< Duktape context (never null)
     std::map<Object *, std::pair<std::unique_ptr<DuktapeObjectWrapper>, Connection>> m_objectWrappers; ///< Object wrappers + beforeDestroy connections
