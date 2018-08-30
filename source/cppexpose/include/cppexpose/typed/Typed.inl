@@ -30,6 +30,10 @@ Typed<T, BASE>::~Typed()
 template <typename T, typename BASE>
 const std::type_info & Typed<T, BASE>::type() const
 {
+    static_assert(std::is_void<typename std::remove_pointer<T>::type>::value
+               || helper::isDefined<typename std::remove_pointer<T>::type>::value,
+               "std::remove_pointer<T>::type must be fully defined");
+
     return typeid(T);
 }
 

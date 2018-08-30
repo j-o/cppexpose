@@ -82,6 +82,10 @@ std::vector<T> Variant::toVector() const
 template <typename T>
 bool Variant::hasType() const
 {
+    static_assert(std::is_void<typename std::remove_pointer<T>::type>::value
+               || helper::isDefined<typename std::remove_pointer<T>::type>::value,
+               "std::remove_pointer<T>::type must be fully defined");
+
     if (!m_value) {
         return false;
     }
@@ -107,6 +111,11 @@ bool Variant::canConvert() const
 template <typename T>
 T Variant::value(const T & defaultValue) const
 {
+
+    static_assert(std::is_void<typename std::remove_pointer<T>::type>::value
+               || helper::isDefined<typename std::remove_pointer<T>::type>::value,
+               "std::remove_pointer<T>::type must be fully defined");
+
     // Type of variant is the wanted type
     if (m_value && typeid(T) == m_value->type())
     {
@@ -132,6 +141,10 @@ T Variant::value(const T & defaultValue) const
 template <typename T>
 T * Variant::ptr()
 {
+    static_assert(std::is_void<typename std::remove_pointer<T>::type>::value
+               || helper::isDefined<typename std::remove_pointer<T>::type>::value,
+               "std::remove_pointer<T>::type must be fully defined");
+
     if (m_value && typeid(T) == m_value->type()) {
         return static_cast<DirectValue<T> *>(m_value.get())->ptr();
     } else {
@@ -142,6 +155,10 @@ T * Variant::ptr()
 template <typename T>
 const T * Variant::ptr() const
 {
+    static_assert(std::is_void<typename std::remove_pointer<T>::type>::value
+               || helper::isDefined<typename std::remove_pointer<T>::type>::value,
+               "std::remove_pointer<T>::type must be fully defined");
+
     if (m_value && typeid(T) == m_value->type()) {
         return static_cast<const DirectValue<T> *>(m_value.get())->ptr();
     } else {
