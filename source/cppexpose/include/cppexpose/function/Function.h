@@ -86,6 +86,16 @@ public:
     */
     Variant call(const std::vector<Variant> & args);
 
+    /**
+    *  @brief
+    *    Get the target function
+    *
+    *  @return
+    *    A pointer to the target function
+    */
+    AbstractFunction * function();
+    const AbstractFunction * function() const;
+
 
 protected:
     std::unique_ptr<AbstractFunction> m_func; ///< Function implementation

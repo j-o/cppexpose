@@ -47,4 +47,16 @@ Variant Function::call(const std::vector<Variant> & args)
 }
 
 
+AbstractFunction * Function::function()
+{
+    return m_func.get();
+}
+
+
+const AbstractFunction * Function::function() const
+{
+    return m_func.get();
+}
+
+
 } // namespace cppexpose
