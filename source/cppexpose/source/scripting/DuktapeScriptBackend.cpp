@@ -429,7 +429,10 @@ duk_ret_t DuktapeScriptBackend::printHelper(duk_context * context)
                         auto firstItem = true;
 
                         text << "[";
-                        for (unsigned int j = 0; j < duk_get_length(context, index); ++j)
+
+                        const auto numItems = duk_get_length(context, index);
+                        unsigned int j = 0;
+                        for (; j < numItems && j < 3; ++j)
                         {
                             if (!firstItem)
                             {
@@ -441,6 +444,12 @@ duk_ret_t DuktapeScriptBackend::printHelper(duk_context * context)
                             appendFromStack(-1, false);
                             duk_pop(context);
                         }
+
+                        if (j < numItems)
+                        {
+                            text << ", ...";
+                        }
+
                         text << "]";
                     }
                     else
