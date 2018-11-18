@@ -14,11 +14,11 @@ namespace cppexpose
 {
 
 
-const char * s_duktapeScriptBackendKey   = "_duktapeScriptBackend";
-const char * s_duktapeNextStashIndexKey  = "_duktapeNextStashFunctionIndex";
-const char * s_duktapeFunctionPointerKey = "_duktapeFunctionPointer";
-const char * s_duktapeObjectPointerKey   = "_duktapeObjectPointer";
-const char * s_duktapePropertyNameKey    = "_duktapePropertyName";
+const char * s_duktapeScriptBackendKey   = "duktapeScriptBackend";
+const char * s_duktapeNextStashIndexKey  = "duktapeNextStashFunctionIndex";
+const char * s_duktapeFunctionPointerKey = "duktapeFunctionPointer";
+const char * s_duktapeObjectPointerKey   = "duktapeObjectPointer";
+const char * s_duktapePropertyNameKey    = "duktapePropertyName";
 
 
 DuktapeScriptBackend::DuktapeScriptBackend()
@@ -469,8 +469,8 @@ duk_ret_t DuktapeScriptBackend::printHelper(duk_context * context)
                         duk_enum(context, index, 0);
                         while (duk_next(context, -1, 1)) // Push next key (-2) & value (-1)
                         {
-                            const auto name = duk_require_string(context, -2);
-                            if (name[0] != '_')
+                            const auto name = std::string{duk_require_string(context, -2)};
+                            if (name.substr(0, 7) != "duktape")
                             {
                                 if (!firstItem)
                                 {
