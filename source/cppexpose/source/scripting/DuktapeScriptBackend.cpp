@@ -490,7 +490,7 @@ duk_ret_t DuktapeScriptBackend::printHelper(duk_context * context)
                 break; // case DUK_TYPE_OBJECT
 
             default:
-                error() << "Unknown/missing type";
+                cppassist::error() << "Unknown/missing type";
                 break;
         }
     };
