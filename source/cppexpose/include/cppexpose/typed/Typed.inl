@@ -7,6 +7,46 @@
 #include <cppexpose/variant/Variant.hh>
 
 
+namespace
+{
+
+
+template <typename T>
+struct VariantConversionHelper
+{
+    template <typename BASE>
+    static cppexpose::Variant toVariant(const cppexpose::Typed<T, BASE> * typed)
+    {
+        return cppexpose::Variant::fromValue<T>(typed->value());
+    }
+
+    template <typename BASE>
+    static void fromVariant(cppexpose::Typed<T, BASE> * typed, const cppexpose::Variant & variant)
+    {
+        typed->setValue(variant.value<T>());
+    }
+};
+
+template <>
+struct VariantConversionHelper<cppexpose::Variant>
+{
+    template <typename BASE>
+    static cppexpose::Variant toVariant(const cppexpose::Typed<cppexpose::Variant, BASE> * typed)
+    {
+        return typed->value();
+    }
+
+    template <typename BASE>
+    static void fromVariant(cppexpose::Typed<cppexpose::Variant, BASE> * typed, const cppexpose::Variant & variant)
+    {
+        typed->setValue(variant);
+    }
+};
+
+
+} // namespace
+
+
 namespace cppexpose
 {
 
@@ -120,13 +160,13 @@ bool Typed<T, BASE>::isFloatingPoint() const
 template <typename T, typename BASE>
 Variant Typed<T, BASE>::toVariant() const
 {
-    return Variant::fromValue<T>(this->value());
+    return VariantConversionHelper<T>::toVariant(this);
 }
 
 template <typename T, typename BASE>
 bool Typed<T, BASE>::fromVariant(const Variant & variant)
 {
-    this->setValue(variant.value<T>());
+    VariantConversionHelper<T>::fromVariant(this, variant);
     return true;
 }
 
