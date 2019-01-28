@@ -3,6 +3,7 @@
 
 #include <cppexpose/json/JSON.h>
 #include <cppexpose/typed/DirectValue.h>
+#include <cppexpose/reflection/Object.h>
 
 
 namespace cppexpose

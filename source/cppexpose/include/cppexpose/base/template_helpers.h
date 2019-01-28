@@ -103,6 +103,11 @@ struct CPPEXPOSE_TEMPLATE_API isPlain : public And<Neg<std::is_reference<Type>>:
                             Neg<std::is_const<Type>>::value,
                             Neg<std::is_volatile<Type>>::value> {};
 
+template <typename Type, typename = void>
+struct CPPEXPOSE_TEMPLATE_API isDefined : public std::false_type {};
+
+template <typename Type>
+struct CPPEXPOSE_TEMPLATE_API isDefined<Type, typename std::enable_if<(sizeof(Type) > 0)>::type> : std::true_type {};
 
 } // namespace helper
 
